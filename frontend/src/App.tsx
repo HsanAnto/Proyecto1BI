@@ -1,24 +1,20 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+// src/App.tsx
 
-function App() {
+import React from 'react';
+import ReviewList from './components/ReviewList';
+
+const App: React.FC = () => {
+  const reviews = [
+    { id: 1, text: "Great service!", stars: 5 },
+    { id: 2, text: "Good food, but slow service.", stars: 4 },
+    { id: 3, text: "Not worth it.", stars: 1 },
+    // Add more reviews as needed
+  ];
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Reviews</h1>
+      <ReviewList reviews={reviews} />
     </div>
   );
 }
