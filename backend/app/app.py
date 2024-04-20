@@ -42,6 +42,7 @@ async def upload_file(file: UploadFile = File(...)):
 
 @app.get("/predict/")
 def make_predictions():
+    global reviews_classified
     if df is None:
         return JSONResponse(status_code=400, content={"error": "Primero debe cargar el archivo de reviews"})
 
@@ -59,3 +60,6 @@ async def make_prediction(review: Request):
     except Exception as e:
         return {"error": str(e)}
 
+@app.get("/reviews/")
+async def get_reviews():
+    return reviews_classified
