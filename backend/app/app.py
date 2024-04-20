@@ -28,6 +28,7 @@ async def upload_file(file: UploadFile = File(...)):
 
     try:
         df = pd.read_csv(file.file)
+        
         file.file.close()
         for index, row in df.iterrows():
             review = Review(review_id=index+1, text=row["Review"])
