@@ -18,7 +18,7 @@ app = FastAPI()
 df = None
 reviews = []
 model = Model()
-
+reviews_classified = []
 
 @app.get("/", tags=["root"])
 async def root():
@@ -45,8 +45,8 @@ def make_predictions():
     if df is None:
         return JSONResponse(status_code=400, content={"error": "Primero debe cargar el archivo de reviews"})
 
-    result = model.make_predictions(df)
-    return result
+    reviews_classified = model.make_predictions(df)
+    return reviews_classified
 
 @app.post("/predict/single/")
 async def make_prediction(review: Request):
@@ -58,3 +58,4 @@ async def make_prediction(review: Request):
         return stars
     except Exception as e:
         return {"error": str(e)}
+

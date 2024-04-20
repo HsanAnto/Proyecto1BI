@@ -130,14 +130,6 @@ class DataFrameTransformer(BaseEstimator, TransformerMixin):
         X_tf_idf = self.tf_idf.transform(X['Review'])
         return X_tf_idf
 
-
-pipeline = Pipeline([
-    ('tokenizer', Tokenizer()),
-    ('noise_remover', NoiseRemover()),
-    ('lemmatizer', Lemmatizer()),
-    ('stopwords_remover', StopwordsRemover(stopwords_list=default_stopwords)),
-    ('dataframe_transformerSVM', DataFrameTransformer()),
-    ('model', load('./backend/assets/model.pkl'))])
 class Model:
 
     def __init__(self):
@@ -146,9 +138,9 @@ class Model:
     def make_predictions(self, data):
         result = self.model.predict(data)
         data['Class'] = result
-        json_data = data.to_json(orient='records')
-        return json_data
-    
+        self.predictions = data.to_dict(orient='records')
+        return self.predictions
+
     def make_single_prediction(self, txt):
         txt_df = pd.DataFrame({"Review": [txt]})
         result = self.model.predict(txt_df[["Review"]]).tolist()[0]
