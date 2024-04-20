@@ -19,14 +19,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
 
 
-class Review:
-    def __init__(self, review_id, text):
-        self.id = review_id
-        self.text = text
-
-    def to_dict(self):
-        return {"id": self.id, "text": self.text}
-
 app = FastAPI()
 
 # Variable global para almacenar el DataFrame
@@ -39,7 +31,6 @@ async def root():
 
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
-    global df
     if file.content_type != "text/csv":
         return JSONResponse(status_code=400, content={"error": "El archivo debe ser de tipo CSV"})
 
@@ -48,26 +39,20 @@ async def upload_file(file: UploadFile = File(...)):
         
         file.file.close()
 
-
-        # Fit the pipeline
-        train, test = train_test_split(df, test_size=0.2, random_state=9)
-
-
-        #estos es los resultados del modelo
-        x_test = test.drop(['Class'],axis=1)
-        y_test = test['Class']
-
-        model = load("assets/modelo.joblib")
-        
-        y_pred = model.predict(x_test)
-
-        print(classification_report(y_test, y_pred))
-
         for index, row in df.iterrows():
-            review = Review(review_id=index+1, text=row["Review"])
+            review = DataModel(review=row["Review"])
             reviews.append(review.to_dict())
+
         return {"filename": file.filename, "reviews": reviews}
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
     
+@app.get("/predict")
+def make_predictions():
+    if df is None:
+        return JSONResponse(status_code=400, content={"error": "Primero debe cargar el archivo de reviews"})
+    df.columns = dataModel.columns()
+    model = load("../assets/mejor_modelo.joblib")
+    result = model.predict(df)
+    return result
