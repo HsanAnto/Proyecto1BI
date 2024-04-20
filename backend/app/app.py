@@ -1,29 +1,24 @@
-from backend.app import DataModel
-from fastapi import FastAPI, File, UploadFile
+from app.DataModel import DataModel
+from fastapi import FastAPI, File, UploadFile, Body, Request
 from fastapi.responses import JSONResponse
+
+from pydantic import BaseModel
+
+
+from app.PredictionModel import Model
+
+
 import pandas as pd
-from joblib import load
-from sklearn.metrics import classification_report
 
-import numpy as np
-import string
-import unicodedata
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split
-from sklearn.svm import SVC
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import GridSearchCV
-
+import json
 
 app = FastAPI()
 
 # Variable global para almacenar el DataFrame
 df = None
 reviews = []
+model = Model()
+
 
 @app.get("/", tags=["root"])
 async def root():
@@ -31,28 +26,35 @@ async def root():
 
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
+    global df
     if file.content_type != "text/csv":
         return JSONResponse(status_code=400, content={"error": "El archivo debe ser de tipo CSV"})
 
     try:
         df = pd.read_csv(file.file)
-        
-        file.file.close()
 
-        for index, row in df.iterrows():
-            review = DataModel(review=row["Review"])
-            reviews.append(review.to_dict())
+        file.file.close()
 
         return {"filename": file.filename, "reviews": reviews}
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
-    
-@app.get("/predict")
+
+@app.get("/predict/")
 def make_predictions():
     if df is None:
         return JSONResponse(status_code=400, content={"error": "Primero debe cargar el archivo de reviews"})
-    df.columns = dataModel.columns()
-    model = load("../assets/mejor_modelo.joblib")
-    result = model.predict(df)
+
+    result = model.make_predictions(df)
     return result
+
+@app.post("/predict/single/")
+async def make_prediction(review: Request):
+    try:
+        body = await review.body()
+        data = json.loads(body.decode("utf-8"))
+        review_text = data.get("review", "")
+        stars = model.make_single_prediction(review_text)
+        return stars
+    except Exception as e:
+        return {"error": str(e)}
