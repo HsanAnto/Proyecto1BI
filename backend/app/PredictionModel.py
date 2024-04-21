@@ -138,8 +138,8 @@ class Model:
     def make_predictions(self, data):
         result = self.model.predict(data)
         data['Class'] = result
-        self.predictions = data.to_dict(orient='records')
-        return self.predictions
+        json_data = data.to_json(orient='records', force_ascii=False, indent=4)
+        return json_data
 
     def make_single_prediction(self, txt):
         txt_df = pd.DataFrame({"Review": [txt]})
