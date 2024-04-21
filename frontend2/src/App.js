@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import ReviewList from './components/ReviewList';
 import UploadSection from './components/UploadSection';
+import SingleReviewRating from './components/SingleReviewRating';
 
 const App = () => {
   const [reviews, setReviews] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(false);
   const [predicted, setPredicted] = useState(false);
   const [isPredicting, setIsPredicting] = useState(false);
@@ -17,39 +18,8 @@ const App = () => {
     clase5: ['atencion', 'duda', 'gran', 'increible', 'excelente', 'gracias', 'encanto', 'super', 'deliciosa', 'ambiente']
   };
 
-  useEffect(() => {
-    if (uploadedFile && predicted) {
-      fetch('http://127.0.0.1:8000/reviews/')
-        .then(response => response.json())
-        .then(data => {
-          const datos = JSON.parse(data);
-          let reviews = [];
-          for (let i = 0; i < datos.length; i++) {
-            let words = datos[i].words;
-            let clase = datos[i].Class;
-
-            let wordsFiltered = [...new Set(words.filter(word => clases['clase' + clase].includes(word)))];
-            let review = {
-              Review: datos[i].Review,
-              Class: clase,
-              words: wordsFiltered
-            };
-
-            reviews.push(review);
-          }
-          setReviews(reviews);
-          setIsLoading(false);
-        })
-        .catch(error => {
-          console.error(error);
-          setIsLoading(false);
-        });
-    }
-  }, [uploadedFile, predicted, clases]);
-
   const handlePredict = () => {
     setIsPredicting(true);
-
     // Fetch request to predict endpoint
     fetch('http://127.0.0.1:8000/predict/')
       .then(response => {
@@ -58,6 +28,7 @@ const App = () => {
           alert("Prediction successful");
           setPredicted(true);
           setIsPredicting(false);
+          fetchReviews(); // Fetch reviews after successful prediction
         } else {
           console.error("Prediction failed");
         }
@@ -67,11 +38,38 @@ const App = () => {
       });
   };
 
+  const fetchReviews = () => {
+    setIsLoading(true);
+    fetch('http://127.0.0.1:8000/reviews/')
+      .then(response => response.json())
+      .then(data => {
+        const datos = JSON.parse(data);
+        let reviews = [];
+        for (let i = 0; i < datos.length; i++) {
+          let words = datos[i].words;
+          let clase = datos[i].Class;
+          let wordsFiltered = [...new Set(words.filter(word => clases['clase' + clase].includes(word)))];
+          let review = {
+            Review: datos[i].Review,
+            Class: clase,
+            words: wordsFiltered
+          };
+          reviews.push(review);
+        }
+        setReviews(reviews);
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error(error);
+        setIsLoading(false);
+      });
+  };
+
   return (
     <div className="container mx-auto p-4">
-      {!uploadedFile ?
+      {!uploadedFile ? (
         <UploadSection setUploadedFile={setUploadedFile} />
-        :
+      ) : (
         <div>
           <p className="bg-green-100 text-green-800 p-4 rounded-md mb-4">File uploaded successfully</p>
           <button
@@ -87,14 +85,10 @@ const App = () => {
             Predict
           </button>
         </div>
-      }
+      )}
       {isPredicting && <p>Predicting...</p>}
-
-      {uploadedFile && predicted && (isLoading ? (
-        <p>Loading...</p>
-      ) : (
-        <ReviewList reviews={reviews} />
-      ))}
+      <SingleReviewRating />
+      {uploadedFile && predicted && (isLoading ? <p>Loading...</p> : <ReviewList reviews={reviews} />)}
     </div>
   );
 };
